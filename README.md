@@ -222,3 +222,5 @@ sequenceDiagram
     PS->>JS: setVolume(0.8)
     JS->>JS: audio.volume = 0.8
 ```
+Model used:
+Claude: Sonnet 4.6
