@@ -1,0 +1,9 @@
+Jukebox.Client/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
+Jukebox.Client/bin/Debug/net8.0/System.Net.Http.dll
+/.vs
+/Jukebox.API/bin
+/Jukebox.API/obj
+/Jukebox.Client/bin
+/Jukebox.Client/obj
+/Jukebox.Shared/obj
+/Jukebox.Shared/bin

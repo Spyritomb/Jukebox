@@ -1,0 +1,240 @@
+@page "/"
+@using Jukebox.Shared.Models
+@using Jukebox.Client.Services
+@inject HttpClient Http
+@inject JukeboxPlayerService Player
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="jukebox-shell">
+
+    <!-- ── Header ── -->
+    <header class="jukebox-header">
+        <div class="jukebox-logo">JUKE<span>BOX</span></div>
+        <div class="header-meta">@Player.Queue.Count tracks loaded</div>
+    </header>
+
+    <!-- ── Now Playing ── -->
+    <section>
+        <div class="now-playing">
+
+            <!-- Song info -->
+            <div class="np-info">
+                <div class="np-disc @(Player.IsPlaying ? "spinning" : "")"></div>
+                <div class="np-text">
+                    @if (Player.CurrentSong is not null)
+                    {
+                        <div class="np-title">@Player.CurrentSong.Title</div>
+                        <div class="np-artist">@Player.CurrentSong.Artist</div>
+                        <div class="np-album">@Player.CurrentSong.Album</div>
+                    }
+                    else
+                    {
+                        <div class="np-title" style="color:var(--text-dim)">No track selected</div>
+                        <div class="np-artist">—</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="progress-row">
+                <span class="time-label">@FormatTime(Player.CurrentTime)</span>
+                <div class="progress-track" @onclick="OnProgressClick">
+                    <div class="progress-fill" style="width:@ProgressPercent%"></div>
+                </div>
+                <span class="time-label" style="text-align:right">@FormatTime(Player.Duration)</span>
+            </div>
+
+            <!-- Playback controls -->
+            <div class="controls-row">
+                <button class="ctrl-btn @(Player.IsShuffle ? "active" : "")"
+                        title="Shuffle"
+                        @onclick="() => Player.ToggleShuffle()">
+                    ⇄
+                </button>
+
+                <button class="ctrl-btn" title="Previous" @onclick="() => Player.PrevAsync()">⏮</button>
+
+                <button class="ctrl-btn primary" title="Play / Pause"
+                        @onclick="OnPlayPause">
+                    @(Player.IsPlaying ? "⏸" : "▶")
+                </button>
+
+                <button class="ctrl-btn danger" title="Stop" @onclick="() => Player.StopAsync()">⏹</button>
+
+                <button class="ctrl-btn" title="Next" @onclick="() => Player.NextAsync()">⏭</button>
+
+                <button class="ctrl-btn @(Player.IsRepeat ? "active" : "")"
+                        title="Repeat"
+                        @onclick="() => Player.ToggleRepeat()">
+                    ↺
+                </button>
+            </div>
+
+            <!-- Volume -->
+            <div class="volume-row">
+                <span>🔈</span>
+                <input type="range" class="volume-slider"
+                       min="0" max="1" step="0.02"
+                       value="@Player.Volume"
+                       @oninput="OnVolumeChange" />
+                <span>🔊</span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── Queue ── -->
+    <section class="queue-section">
+        <div class="queue-header">
+            <span>Queue</span>
+            <hr />
+        </div>
+
+        @if (_loading)
+        {
+            <div class="state-msg"><strong>⟳</strong>Loading library…</div>
+        }
+        else if (_error is not null)
+        {
+            <div class="state-msg"><strong>!</strong>@_error</div>
+        }
+        else if (!Player.Queue.Any())
+        {
+            <div class="state-msg">
+                <strong>♪</strong>
+                Drop audio files into <code>Jukebox.API/Music/</code> and restart the API.
+            </div>
+        }
+        else
+        {
+            <div class="song-list">
+                @for (int i = 0; i < Player.Queue.Count; i++)
+                {
+                    var index = i;
+                    var song = Player.Queue[i];
+                    var active = Player.CurrentIndex == i;
+
+                    <div class="song-row @(active ? "active" : "")"
+                         @onclick="() => OnSongClick(index)">
+
+                        <div class="sr-num">
+                            @if (active && Player.IsPlaying)
+                            {
+                                <span class="playing-icon">♪</span>
+                            }
+                            else
+                            {
+                                <span>@(i + 1)</span>
+                            }
+                        </div>
+
+                        <div class="sr-info">
+                            <div class="sr-title">@song.Title</div>
+                            <div class="sr-artist">@song.Artist</div>
+                        </div>
+
+                        <div class="sr-duration">@song.DurationFormatted</div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+</div>
+
+<!-- Audio element — src is set imperatively via JS, never via Blazor binding -->
+<audio id="jukebox-audio" preload="metadata" style="display:none"></audio>
+
+@code {
+    private bool _loading = true;
+    private string? _error;
+    private DotNetObjectReference<JukeboxPage>? _selfRef;
+
+    private double ProgressPercent =>
+        Player.Duration > 0 ? Player.CurrentTime / Player.Duration * 100 : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Player.StateChanged += OnStateChanged;
+        Player.UrlResolver = id => $"{Http.BaseAddress}api/songs/{id}/stream";
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ResponseObject<List<Song>>>("api/songs");
+            if (response is not null && !response.IsError && response.dto is not null)
+            {
+                Player.LoadQueue(response.dto);
+            }
+            else if (response?.IsError == true)
+            {
+                _error = response.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not reach API: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("jukeboxPlayer.init", _selfRef);
+        }
+    }
+
+    // Forward JS callbacks to the service
+    [JSInvokable] public Task OnSongEndedAsync() => Player.OnSongEndedAsync();
+    [JSInvokable] public Task OnTimeUpdateAsync(double c, double d) => Player.OnTimeUpdateAsync(c, d);
+
+    private async Task OnSongClick(int index)
+    {
+        await Player.PlayAsync(index);
+    }
+
+    private async Task OnPlayPause()
+    {
+        if (Player.CurrentIndex < 0 && Player.Queue.Any())
+            await Player.PlayAsync(0);
+        else
+            await Player.TogglePlayPauseAsync();
+    }
+
+    private async Task OnVolumeChange(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var v))
+            await Player.SetVolumeAsync(v);
+    }
+
+    private async Task OnProgressClick(MouseEventArgs e)
+    {
+        if (Player.Duration <= 0) return;
+        // e.OffsetX / track width — approximate via JS
+        var pct = await JS.InvokeAsync<double>("eval",
+            $"event.offsetX / event.currentTarget.offsetWidth");
+        await Player.SeekAsync(pct * Player.Duration);
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private static string FormatTime(double seconds)
+    {
+        var ts = TimeSpan.FromSeconds(double.IsNaN(seconds) ? 0 : seconds);
+        return ts.TotalHours >= 1
+            ? ts.ToString(@"h\:mm\:ss")
+            : ts.ToString(@"m\:ss");
+    }
+
+    public void Dispose()
+    {
+        Player.StateChanged -= OnStateChanged;
+        _selfRef?.Dispose();
+    }
+}

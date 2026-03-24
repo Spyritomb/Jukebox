@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jukebox</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <div class="splash-loader">
+            <div class="splash-title">JUKEBOX</div>
+            <div class="splash-sub">Loading…</div>
+        </div>
+    </div>
+
+    <!-- Hidden audio element — controlled entirely via JS interop -->
+    <audio id="jukebox-audio" preload="metadata"></audio>
+
+    <div id="blazor-error-ui">
+        An error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/player.js"></script>
+</body>
+</html>

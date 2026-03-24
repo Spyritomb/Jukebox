@@ -1,0 +1,271 @@
+/* ── Fonts & reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:        #0d0d0d;
+    --surface:   #1a1a1a;
+    --surface2:  #242424;
+    --border:    #2e2e2e;
+    --gold:      #c9a84c;
+    --gold-dim:  #7a6230;
+    --red:       #d94040;
+    --green:     #3dba6f;
+    --text:      #e8e0d0;
+    --text-dim:  #7a7060;
+    --accent:    #c9a84c;
+    --radius:    6px;
+    --ff-display: 'Bebas Neue', sans-serif;
+    --ff-body:    'DM Sans', sans-serif;
+}
+
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--ff-body);
+    font-size: 14px;
+    overflow-x: hidden;
+}
+
+/* ── Splash loader ── */
+.splash-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 12px;
+}
+.splash-title { font-family: var(--ff-display); font-size: 5rem; color: var(--gold); letter-spacing: 8px; }
+.splash-sub   { color: var(--text-dim); font-size: .85rem; letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── Layout ── */
+.jukebox-shell {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    gap: 20px;
+}
+
+/* ── Header ── */
+.jukebox-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+}
+.jukebox-logo {
+    font-family: var(--ff-display);
+    font-size: 2.8rem;
+    color: var(--gold);
+    letter-spacing: 6px;
+    line-height: 1;
+}
+.jukebox-logo span { color: var(--red); }
+.header-meta { margin-left: auto; color: var(--text-dim); font-size: .8rem; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── Now Playing bar ── */
+.now-playing {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.np-info { display: flex; align-items: center; gap: 16px; }
+
+.np-disc {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%, #3a3a3a 0%, #111 60%);
+    border: 3px solid var(--gold-dim);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+.np-disc::after {
+    content: '';
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+}
+.np-disc.spinning {
+    animation: spin 3s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.np-text { flex: 1; min-width: 0; }
+.np-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.np-artist { color: var(--gold); font-size: .82rem; margin-top: 2px; }
+.np-album  { color: var(--text-dim); font-size: .75rem; margin-top: 1px; }
+
+/* ── Progress bar ── */
+.progress-row { display: flex; align-items: center; gap: 10px; }
+.time-label { color: var(--text-dim); font-size: .75rem; font-variant-numeric: tabular-nums; min-width: 36px; }
+.progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+.progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width .2s linear;
+    pointer-events: none;
+}
+
+/* ── Controls ── */
+.controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.ctrl-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.ctrl-btn:hover { background: var(--surface2); border-color: var(--gold-dim); }
+.ctrl-btn.active { color: var(--gold); border-color: var(--gold); }
+.ctrl-btn.primary {
+    width: 52px; height: 52px;
+    font-size: 1.3rem;
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,.08);
+}
+.ctrl-btn.primary:hover { background: rgba(201,168,76,.18); }
+.ctrl-btn.danger { color: var(--red); border-color: var(--red); }
+.ctrl-btn.danger:hover { background: rgba(217,64,64,.12); }
+
+.volume-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: -4px;
+}
+.volume-row span { color: var(--text-dim); font-size: .9rem; }
+input[type=range].volume-slider {
+    -webkit-appearance: none;
+    width: 110px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+input[type=range].volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+}
+
+/* ── Queue / Song list ── */
+.queue-section { display: flex; flex-direction: column; gap: 10px; }
+.queue-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-dim);
+    font-size: .72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.queue-header hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+
+.song-list { display: flex; flex-direction: column; gap: 2px; }
+
+.song-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background .12s;
+    border: 1px solid transparent;
+}
+.song-row:hover { background: var(--surface); }
+.song-row.active {
+    background: var(--surface);
+    border-color: var(--gold-dim);
+}
+.song-row.active .sr-title { color: var(--gold); }
+
+.sr-num { color: var(--text-dim); font-size: .8rem; text-align: center; }
+.sr-num .playing-icon { color: var(--green); font-size: .85rem; }
+.sr-info { min-width: 0; }
+.sr-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-artist { color: var(--text-dim); font-size: .78rem; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-duration { color: var(--text-dim); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.sr-add {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: .85rem;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity .15s, color .15s;
+}
+.song-row:hover .sr-add { opacity: 1; }
+.sr-add:hover { color: var(--gold); }
+
+/* ── Empty / loading states ── */
+.state-msg {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 40px 0;
+    font-size: .85rem;
+    letter-spacing: 1px;
+}
+.state-msg strong { display: block; font-family: var(--ff-display); font-size: 2rem; color: var(--border); margin-bottom: 8px; }
+
+/* ── Error banner ── */
+#blazor-error-ui {
+    background: var(--red);
+    color: #fff;
+    padding: 10px 16px;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    font-size: .85rem;
+    display: none;
+    z-index: 1000;
+}
+#blazor-error-ui .dismiss { float: right; cursor: pointer; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
